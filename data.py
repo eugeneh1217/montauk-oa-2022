@@ -57,21 +57,20 @@ class SqliteDB(FileLocationDB):
         )
         self._commit()
 
+    def _search_by(self, key, value):
+        return self._exec(
+            'SELECT PLAN AS PLAN_NAME, "{" || GROUP_CONCAT(FILE_LOC, ", ") || "}" AS LOCATION '
+            f'FROM FILE_LOCATIONS WHERE {key} = "{value}" '
+            "GROUP BY PLAN"
+        )
+
     def search(self, ein: int=None, comp: str=None):
         if ein is None == comp is None:
             return None
         if comp is None:
-            res_cur = self._exec(
-                'SELECT PLAN AS PLAN_NAME, "{" || GROUP_CONCAT(FILE_LOC, ", ") || "}" AS LOCATION '
-                f"FROM FILE_LOCATIONS WHERE EIN = {ein} "
-                "GROUP BY PLAN"
-            )
+            res_cur = self._search_by("EIN", ein)
         else:
-            res_cur = self._exec(
-                'SELECT PLAN AS PLAN_NAME, "{" || GROUP_CONCAT(FILE_LOC, ", ") || "}" AS LOCATION '
-                f'FROM FILE_LOCATIONS WHERE COMPANY = "{comp}" '
-                "GROUP BY PLAN"
-            )
+            res_cur = self._search_by("COMPANY", comp)
         res = res_cur.fetchall()
         res = {comp: locs for comp, locs in res}
         return res
