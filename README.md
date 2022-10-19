@@ -26,5 +26,6 @@ Development Process
 			- plan_name
 			- file_location UNIQUE
 3. surface with api
+	- decided to do search and data organization entirely in sql for speed incase there is a large result from search query
 
 
