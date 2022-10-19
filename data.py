@@ -3,7 +3,7 @@ import requests
 import sqlite3
 import time
 
-DB_PATH = "data.db"
+DB_PATH = "time-benchmark.db"
 TIC_BLOB_DOWNLOAD_URL = ("https://transparency-in-coverage.uhc.com"
                          "/api/v1/uhc/blobs/")
 
@@ -20,7 +20,10 @@ class FileLocationDB:
     
     def insert_file_location(self, data: FileLocation):
         raise NotImplementedError()
-    
+
+    def search(self, ein=None, comp=None):
+        raise NotImplementedError()
+
     def exit(self):
         raise NotImplementedError()
 
@@ -46,9 +49,6 @@ class SqliteDB(FileLocationDB):
     def _commit(self):
         return self._conn.commit()
     
-    def exit(self):
-        self._conn.close()
-
     def insert_file_location(self, data: FileLocation):
         self._exec(
             "INSERT INTO FILE_LOCATIONS "
@@ -56,6 +56,29 @@ class SqliteDB(FileLocationDB):
             f'VALUES ("{data.ein}", "{data.comp}", "{data.plan}", "{data.loc}")'
         )
         self._commit()
+
+    def search(self, ein: int=None, comp: str=None):
+        if ein is None == comp is None:
+            return None
+        if comp is None:
+            res_cur = self._exec(
+                'SELECT PLAN AS PLAN_NAME, "{" || GROUP_CONCAT(FILE_LOC, ", ") || "}" AS LOCATION '
+                f"FROM FILE_LOCATIONS WHERE EIN = {ein} "
+                "GROUP BY PLAN"
+            )
+        else:
+            res_cur = self._exec(
+                'SELECT PLAN AS PLAN_NAME, "{" || GROUP_CONCAT(FILE_LOC, ", ") || "}" AS LOCATION '
+                f'FROM FILE_LOCATIONS WHERE COMPANY = "{comp}" '
+                "GROUP BY PLAN"
+            )
+        res = res_cur.fetchall()
+        res = {comp: locs for comp, locs in res}
+        return res
+            
+
+    def exit(self):
+        self._conn.close()
 
 class DataDownloader:
     def __init__(self, db: FileLocationDB):
