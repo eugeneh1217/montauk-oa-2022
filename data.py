@@ -3,9 +3,7 @@ import requests
 import sqlite3
 import time
 
-DB_PATH = "time-benchmark.db"
-TIC_BLOB_DOWNLOAD_URL = ("https://transparency-in-coverage.uhc.com"
-                         "/api/v1/uhc/blobs/")
+import config
 
 @dataclass
 class FileLocation:
@@ -40,7 +38,7 @@ class SqliteDB(FileLocationDB):
         )
 
     def __init__(self, **connection_args):
-        self._conn = sqlite3.connect(DB_PATH, **connection_args)
+        self._conn = sqlite3.connect(config.DB_PATH, **connection_args)
         self._initialize_tables()
 
     def _exec(self, query):
@@ -92,7 +90,7 @@ class TICDownloader(DataDownloader):
         self._db = db
         
     def download(self):
-        blobs = requests.get(TIC_BLOB_DOWNLOAD_URL)
+        blobs = requests.get(config.TIC_BLOB_DOWNLOAD_URL)
         blobs.raise_for_status()
         blobs = blobs.json()["blobs"]
         blobs = [blob for blob in blobs if blob["name"].endswith("index.json")]
