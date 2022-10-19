@@ -59,7 +59,8 @@ class SqliteDB(FileLocationDB):
 
     def _search_by(self, key, value):
         return self._exec(
-            'SELECT PLAN AS PLAN_NAME, "{" || GROUP_CONCAT(FILE_LOC, ", ") || "}" AS LOCATION '
+            'SELECT PLAN AS PLAN_NAME, '
+            '"{" || GROUP_CONCAT(FILE_LOC, ", ") || "}" AS LOCATION '
             f'FROM FILE_LOCATIONS WHERE {key} = "{value}" '
             "GROUP BY PLAN"
         )
@@ -99,13 +100,13 @@ class TICDownloader(DataDownloader):
             resp = requests.get(blob["downloadUrl"])
             resp.raise_for_status()
             data = resp.json()
-            ein = data["reporting_structure"][0]["reporting_plans"][0]["plan_id"]
+            report = data["reporting_structure"][0]["reporting_plans"]
+            ein = report[0]["plan_id"]
             comp = data["reporting_entity_name"]
-            plan = data["reporting_structure"][0]["reporting_plans"][0]["plan_name"]
+            plan = report["plan_name"]
             for nw_file in data["reporting_structure"][0]["in_network_files"]:
                 entry = FileLocation(ein, comp, plan, nw_file["location"])
                 self._db.insert_file_location(entry)
-
 
 if __name__ == "__main__":
     print("initializing db connection...")
